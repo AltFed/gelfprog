@@ -1,0 +1,12 @@
+per ora sappiamo quanta radiazione arriva al sensore
+potermmo fare un passo in piu
+cioe arriva questa densità di potenza, ci mettiamo rumore, calcoliamo la potenza tramite il voltaggio
+
+presa la misura ora io dico semplicemente la potenza che arriva è quella vera. 
+
+in realta arriva la potenza, si scalda di una certa T, e poi ho una differenza di voltaggio. su questo inoltre ho anche un rumore, e poi devo invertire questo segnale per trovare la potenza. Come varia la sensibilità cambiando la resistenza
+
+
+ipotizziamo uina certa densità di potenza con un range, e poi lo misuriamo e ricostruisiamo e in caso si accoppia.
+
+data w, prendo delta V ci metto rumore e poi ricostruisco potenza. (ad esempio con montecarlo per vedere come viene propragato il rumore e per trovare i limiti di sensitività)  
