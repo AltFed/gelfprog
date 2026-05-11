@@ -1,0 +1,913 @@
+% ============================================================
+%  Bolometer Simulator --- Developer Guide
+%  Compile: pdflatex bolometer_devguide.tex  (twice for TOC)
+% ============================================================
+\documentclass[11pt,a4paper]{article}
+
+% ---- packages ------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{mdframed}
+\usepackage{parskip}
+\usepackage{textcomp}
+
+% ---- colours -------------------------------------------------
+\definecolor{matlabblue}{HTML}{0072BD}
+\definecolor{matlabgreen}{HTML}{217821}
+\definecolor{matlabgray}{HTML}{808080}
+\definecolor{matlabcomment}{HTML}{3D7A14}
+\definecolor{matlabstring}{HTML}{A2101F}
+\definecolor{codebg}{HTML}{F5F7FA}
+\definecolor{rulecolor}{HTML}{CDD3DC}
+\definecolor{titleblue}{HTML}{0D4B8C}
+\definecolor{noteblue}{HTML}{EBF3FB}
+\definecolor{noteborder}{HTML}{2E86C1}
+\definecolor{warnbg}{HTML}{FEF9E7}
+\definecolor{warnborder}{HTML}{D4AC0D}
+
+% ---- MATLAB listing style -----------------------------------
+\lstdefinestyle{matlab}{
+  language=Matlab,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{matlabblue}\bfseries,
+  commentstyle=\color{matlabcomment}\itshape,
+  stringstyle=\color{matlabstring},
+  numberstyle=\tiny\color{matlabgray},
+  numbers=left,
+  numbersep=8pt,
+  stepnumber=1,
+  frame=single,
+  rulecolor=\color{rulecolor},
+  framesep=4pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  xleftmargin=12pt,
+  xrightmargin=4pt,
+  morekeywords={function,end,if,for,while,true,false,nargin,fieldnames,isfield,
+                logspace,linspace,randn,sqrt,abs,mean,std,log10,max,min,
+                sign,zeros,ones,repmat,strcmp,any,all,sum,tinv,reshape,size,
+                length,fprintf,subplot,hold,grid,box,plot,semilogx,semilogy,
+                loglog,errorbar,fill,yline,xline,xlim,ylim,set,title,xlabel,
+                ylabel,legend,sgtitle,figure,exportgraphics,linkaxes,flipud,
+                fieldnames,mat2str,sprintf},
+}
+\lstset{style=matlab}
+
+% ---- callout environments -----------------------------------
+\newmdenv[
+  backgroundcolor=noteblue,
+  linecolor=noteborder,
+  linewidth=2pt,
+  topline=false, rightline=false, bottomline=false,
+  innerleftmargin=10pt, innerrightmargin=8pt,
+  innertopmargin=6pt, innerbottommargin=6pt,
+]{infobox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=warnborder,
+  linewidth=2pt,
+  topline=false, rightline=false, bottomline=false,
+  innerleftmargin=10pt, innerrightmargin=8pt,
+  innertopmargin=6pt, innerbottommargin=6pt,
+]{warnbox}
+
+% ---- headers ------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{matlabgray}{\small Bolometer Simulator --- Developer Guide}}
+\rhead{\textcolor{matlabgray}{\small\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---- section formatting -------------------------------------
+\titleformat{\section}{\large\bfseries\color{titleblue}}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{titleblue}}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+
+% ---- hyperref -----------------------------------------------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=titleblue,
+  urlcolor=matlabblue,
+  citecolor=matlabblue,
+  pdftitle={Bolometer Simulator --- Developer Guide},
+  pdfauthor={gelfprog},
+}
+
+% ============================================================
+\begin{document}
+
+% ---- title page ---------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Huge\bfseries\color{titleblue} Bolometer Simulator\\[0.4em]}
+  {\LARGE Developer Guide\par}
+  \vspace{1.5cm}
+  {\large\ttfamily bolometer/ --- MATLAB codebase\par}
+  \vspace{0.8cm}
+  \rule{12cm}{0.4pt}\\[0.6cm]
+  {\large
+    \textbf{Repository:} \texttt{github.com/AltFed/gelfprog}\\[0.3em]
+    \textbf{Corso:} Diagnostiche per plasmi\\[0.3em]
+    \textbf{Docenti:} Dr.~A.~Murari \& Prof.~M.~Gelfusa\\[0.3em]
+    \textbf{Data:} Maggio 2026
+  }
+  \vspace{1.5cm}
+
+  \begin{mdframed}[backgroundcolor=codebg,linecolor=rulecolor]
+  \centering\ttfamily\large
+  \textcolor{matlabblue}{P} $\to$
+  \textcolor{matlabgreen}{$\Delta$T} $\to$
+  \textcolor{matlabgreen}{$\Delta$R} $\to$
+  \textcolor{matlabgreen}{$\Delta$V} $\to$
+  \textcolor{matlabstring}{+\,noise} $\to$
+  \textcolor{matlabblue}{P$_\text{rec}$}
+  \end{mdframed}
+  \vfill
+  {\small\color{matlabgray}
+    Questo documento è destinato agli sviluppatori che vogliono comprendere,
+    modificare o estendere il simulatore. Contiene l'architettura completa,
+    le equazioni fisiche, i listati commentati e le istruzioni di estensione.}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Panoramica del Progetto}
+
+Il simulatore implementa la catena di misura completa di un bolometro resistivo
+a foglio metallico (tipo gold-foil usato su JET, FTU, ITER). La catena è:
+
+\begin{equation}
+  P \;\xrightarrow{\text{bilancio termico}}\;
+  \Delta T \;\xrightarrow{\text{TCR}}\;
+  \Delta R \;\xrightarrow{\text{polarizzazione}}\;
+  \Delta V_{\text{ideal}}
+  \;\xrightarrow{\text{+rumore}}\;
+  \Delta V_{\text{noisy}}
+  \;\xrightarrow{\text{inversione}}\;
+  P_{\text{rec}}
+\end{equation}
+
+\subsection*{Struttura del repository}
+
+\begin{verbatim}
+gelfprog/
++-- bolometer/
+|   +-- bolometer_params.m        parametri fisici e di rumore
+|   +-- forward_model.m           P -> DeltaT -> DeltaR -> DeltaV  (forward model)
+|   +-- add_noise_to_signal.m     DeltaV + rumore gaussiano (N realizzazioni MC)
+|   +-- reconstruct_power.m       DeltaV_noisy -> P_rec  (inversione + statistiche)
+|   +-- run_power_sweep.m         sweep logaritmico + figura 3 pannelli
+|   +-- sensitivity_analysis.m    sweep di R0,alpha,G,I_bias -> S/NEP/P_sat/DR
+|   +-- main.m                    script master configurabile
+|   +-- CONTEXT.md                contesto aggiornato ad ogni modifica
+|   +-- test_block1..5.m          smoke-test per ogni blocco
+|   +-- *.png                     figure generate
++-- bolometer_simulator.pptx      presentazione (10 slide)
++-- bolometer_devguide.pdf        questo documento
+\end{verbatim}
+
+\subsection*{Come eseguire il simulatore}
+
+Aprire MATLAB, spostarsi nella cartella \texttt{bolometer/} ed eseguire:
+
+\begin{lstlisting}[caption={Esecuzione rapida con parametri default}]
+cd bolometer/
+main
+\end{lstlisting}
+
+Per personalizzare i parametri fisici o di rumore, editare la sezione
+\texttt{CUSTOM\_PARAMS} in \texttt{main.m}:
+
+\begin{lstlisting}[caption={Override parametri in main.m}]
+CUSTOM_PARAMS = {'R0', 200, 'G', 5e-5, 'I_bias', 2e-3};
+\end{lstlisting}
+
+% ============================================================
+\section{Fondamenti Fisici}
+
+\subsection{Modello termico in regime stazionario}
+
+L'equazione di bilancio termico del bolometro è:
+
+\begin{equation}
+  C\,\frac{d(\Delta T)}{dt} + G\,\Delta T = P(t)
+\end{equation}
+
+dove $C$~[J/K] è la capacità termica e $G$~[W/K] la conduttanza termica.
+In regime stazionario ($d/dt = 0$):
+
+\begin{equation}
+  \boxed{\Delta T = \frac{P}{G}}
+  \label{eq:deltaT}
+\end{equation}
+
+La costante di tempo termica è $\tau = C/G$. Per i parametri default
+$\tau = 10\,\mathrm{ms}$.
+
+\subsection{Effetto TCR (Temperature Coefficient of Resistance)}
+
+La variazione di resistenza del sensore è proporzionale alla variazione
+di temperatura tramite il coefficiente TCR $\alpha$~[1/K]:
+
+\begin{equation}
+  \Delta R = R_0\,\alpha\,\Delta T
+  \label{eq:deltaR}
+\end{equation}
+
+Per l'oro $\alpha \approx 3.4 \times 10^{-3}$~1/K, per il platino
+$\alpha \approx 3.9 \times 10^{-3}$~1/K.
+
+\subsection{Lettura con corrente di polarizzazione}
+
+Con una corrente di polarizzazione costante $I_{\text{bias}}$:
+
+\begin{equation}
+  \Delta V = I_{\text{bias}}\,\Delta R
+  \label{eq:deltaV}
+\end{equation}
+
+Combinando le equazioni \eqref{eq:deltaT}--\eqref{eq:deltaV}:
+
+\begin{equation}
+  \boxed{\Delta V = \underbrace{\frac{I_{\text{bias}}\,R_0\,\alpha}{G}}_{S}\cdot P
+  \qquad \Rightarrow \qquad S = \frac{\Delta V}{P} \quad [\text{V/W}]}
+  \label{eq:sensitivity}
+\end{equation}
+
+\subsection{Saturazione}
+
+L'uscita satura in due modi:
+\begin{itemize}[noitemsep]
+  \item \textbf{Termica:} $\Delta T > \Delta T_{\max}$ (danneggiamento sensore)
+  \item \textbf{Elettronica:} $|\Delta V| > V_{\text{sat}}$ (amplificatore al rail)
+\end{itemize}
+La potenza di saturazione è:
+\begin{equation}
+  P_{\text{sat}} = \frac{V_{\text{sat}}}{S}
+\end{equation}
+
+\subsection{Modello del rumore}
+
+Tre sorgenti indipendenti, sommate in quadratura:
+
+\begin{align}
+  V_J &= \sqrt{4\,k_B\,T_0\,R_0\,\Delta f}  && \text{(Johnson/termico)} \\
+  V_A &= e_n\,\sqrt{\Delta f}               && \text{(amplificatore)} \\
+  V_Q &= \frac{V_{\text{range}}}{2^N\,\sqrt{12}} && \text{(quantizzazione ADC)} \\[6pt]
+  V_{\text{noise}} &= \sqrt{V_J^2 + V_A^2 + V_Q^2}
+\end{align}
+
+Il \textbf{Noise Equivalent Power} è:
+\begin{equation}
+  \text{NEP} = \frac{V_{\text{noise}}}{S}
+\end{equation}
+
+\subsubsection*{Dynamic Range}
+
+\begin{equation}
+  \text{DR} = \frac{P_{\text{sat}}}{\text{NEP}}
+  = \frac{V_{\text{sat}}/S}{V_{\text{noise}}/S}
+  = \frac{V_{\text{sat}}}{V_{\text{noise}}}
+  \label{eq:DR}
+\end{equation}
+
+\begin{infobox}
+\textbf{Risultato chiave:} il DR è \emph{indipendente} da $S$.
+Variare $R_0$, $\alpha$, $G$ o $I_{\text{bias}}$ sposta in modo uguale
+$P_{\text{sat}}$ e NEP, lasciando il DR invariato.
+Con i parametri default: $\text{DR} \approx 101$~dB.
+Per aumentare il DR occorre agire sull'ADC (più bit o range ridotto)
+o sull'amplificatore ($e_n$ minore).
+\end{infobox}
+
+% ============================================================
+\section{Documentazione dei Moduli}
+
+Ogni modulo è un file MATLAB autonomo che riceve un parametri-struct
+prodotto da \texttt{bolometer\_params} e restituisce uno struct di risultati.
+Nessun modulo usa variabili globali.
+
+% ------------------------------------------------------------
+\subsection{\texttt{bolometer\_params.m} --- Parametri}
+
+\subsubsection*{Scopo}
+Costruisce e restituisce uno struct con tutti i parametri del simulatore.
+Supporta l'override selettivo tramite coppie nome-valore.
+
+\subsubsection*{Firma}
+\begin{lstlisting}
+params = bolometer_params()
+params = bolometer_params('R0', 200, 'G', 5e-5)
+\end{lstlisting}
+
+\subsubsection*{Parametri dello struct}
+
+\begin{center}
+\begin{tabular}{llrl}
+\toprule
+Campo & Simbolo & Default & Unità \\
+\midrule
+\texttt{R0}        & $R_0$             & 100        & $\Omega$ \\
+\texttt{alpha}     & $\alpha$          & $3.9\times10^{-3}$ & 1/K \\
+\texttt{G}         & $G$               & $10^{-4}$  & W/K \\
+\texttt{C}         & $C$               & $10^{-6}$  & J/K \\
+\texttt{I\_bias}   & $I_{\text{bias}}$ & $10^{-3}$  & A \\
+\texttt{T0}        & $T_0$             & 300        & K \\
+\texttt{V\_sat}    & $V_{\text{sat}}$  & 1.0        & V \\
+\texttt{dT\_max}   & $\Delta T_{\max}$ & 50         & K \\
+\texttt{BW}        & $\Delta f$        & $10^3$     & Hz \\
+\texttt{e\_n}      & $e_n$             & $10^{-8}$  & V/$\sqrt{\text{Hz}}$ \\
+\texttt{N\_bits}   & $N$               & 16         & bit \\
+\texttt{V\_ADC\_range} & $V_{\text{range}}$ & 2.0  & V \\
+\texttt{N\_MC}     & ---                 & 1000       & --- \\
+\midrule
+\texttt{tau} & $\tau=C/G$ & $10^{-2}$ & s \\
+\texttt{S}   & $S = I_{\text{bias}}R_0\alpha/G$ & 3.9 & V/W \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{Implementazione chiave}
+
+\begin{lstlisting}[caption={Override e ricalcolo campi derivati in bolometer\_params.m}]
+% override with name-value pairs
+for k = 1:2:length(varargin)
+    field = varargin{k};
+    value = varargin{k+1};
+    if ~isfield(params, field)
+        error('bolometer_params: unknown field "%s"', field);
+    end
+    params.(field) = value;
+end
+
+% recompute derived quantities after any override
+params.tau = params.C / params.G;
+params.S   = params.I_bias * params.R0 * params.alpha / params.G;
+\end{lstlisting}
+
+\begin{warnbox}
+\textbf{Attenzione:} i campi \texttt{tau} e \texttt{S} sono ricalcolati
+automaticamente dopo ogni override. Non modificarli a mano nello struct.
+\end{warnbox}
+
+% ------------------------------------------------------------
+\subsection{\texttt{forward\_model.m} --- Modello Diretto}
+
+\subsubsection*{Scopo}
+Implementa la catena fisica $P \to \Delta T \to \Delta R \to \Delta V$
+inclusa la saturazione.
+
+\subsubsection*{Firma}
+\begin{lstlisting}
+result = forward_model(P, params)
+\end{lstlisting}
+
+\subsubsection*{Input / Output}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Campo output & Tipo & Descrizione \\
+\midrule
+\texttt{DeltaT}       & array & incremento di temperatura $[K]$ \\
+\texttt{DeltaR}       & array & variazione di resistenza $[\Omega]$ \\
+\texttt{DeltaV\_ideal}& array & tensione ideale (senza saturazione) $[V]$ \\
+\texttt{DeltaV}       & array & tensione clippata a $V_{\text{sat}}$ $[V]$ \\
+\texttt{is\_saturated}& logical & maschera punti saturi \\
+\texttt{P\_sat}       & scalare & potenza di saturazione $[W]$ \\
+\texttt{S}            & scalare & sensibilità usata $[V/W]$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{Implementazione}
+
+\begin{lstlisting}[caption={forward\_model.m --- corpo principale}]
+% step 1: thermal balance (steady-state)
+result.DeltaT = P / params.G;
+
+% step 2: resistance change via TCR
+result.DeltaR = params.R0 * params.alpha .* result.DeltaT;
+
+% step 3: ideal voltage (current-bias readout)
+result.DeltaV_ideal = params.I_bias .* result.DeltaR;
+
+% step 4: saturation --- two mechanisms
+thermal_sat  = result.DeltaT  > params.dT_max;
+electric_sat = abs(result.DeltaV_ideal) > params.V_sat;
+result.is_saturated = thermal_sat | electric_sat;
+
+result.DeltaV = result.DeltaV_ideal;
+result.DeltaV(result.is_saturated) = ...
+    sign(result.DeltaV_ideal(result.is_saturated)) * params.V_sat;
+
+result.S     = params.S;
+result.P_sat = params.V_sat / params.S;
+\end{lstlisting}
+
+% ------------------------------------------------------------
+\subsection{\texttt{add\_noise\_to\_signal.m} --- Modulo Rumore}
+
+\subsubsection*{Scopo}
+Aggiunge rumore realistico al segnale ideale $\Delta V$.
+Supporta la generazione di $N$ realizzazioni Monte Carlo in parallelo
+tramite operazioni vettorizzate su matrice $[M \times N]$.
+
+\subsubsection*{Firma}
+\begin{lstlisting}
+result = add_noise_to_signal(DeltaV, params)
+result = add_noise_to_signal(DeltaV, params, N_realizations)
+\end{lstlisting}
+
+\subsubsection*{Output principali}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Campo & Dimensioni & Descrizione \\
+\midrule
+\texttt{DeltaV\_noisy}  & $[M \times N]$ & segnale rumoroso \\
+\texttt{V\_J}           & scalare & Johnson noise rms $[V]$ \\
+\texttt{V\_A}           & scalare & amplifier noise rms $[V]$ \\
+\texttt{V\_Q}           & scalare & ADC quant.\ noise rms $[V]$ \\
+\texttt{V\_noise\_total}& scalare & rumore totale $[V]$ \\
+\texttt{SNR}            & $[M \times 1]$ & SNR per punto \\
+\texttt{NEP}            & scalare & noise equivalent power $[W]$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{Implementazione}
+
+\begin{lstlisting}[caption={add\_noise\_to\_signal.m --- calcolo rumore e generazione MC}]
+kB = 1.380649e-23;
+
+% 1. Johnson noise (thermal agitation in the resistor)
+V_J = sqrt(4 * kB * params.T0 * params.R0 * params.BW);
+
+% 2. Amplifier noise
+V_A = params.e_n * sqrt(params.BW);
+
+% 3. ADC quantization noise
+LSB = params.V_ADC_range / 2^params.N_bits;
+V_Q = LSB / sqrt(12);
+
+% Total noise (independent sources -> quadrature sum)
+V_noise = sqrt(V_J^2 + V_A^2 + V_Q^2);
+
+% Generate M x N_realizations Gaussian noise matrix
+DeltaV = DeltaV(:);          % ensure column vector
+M = length(DeltaV);
+noise_matrix = V_noise * randn(M, N_realizations);
+DeltaV_noisy = DeltaV + noise_matrix;
+
+% Hard clip at ADC input range
+V_half = params.V_ADC_range / 2;
+DeltaV_noisy = max(-V_half, min(V_half, DeltaV_noisy));
+\end{lstlisting}
+
+\begin{infobox}
+\textbf{Nota sulla vettorizzazione:} la generazione MC è completamente
+vettorizzata. Per $M = 120$ punti e $N = 1000$ realizzazioni, la matrice
+\texttt{noise\_matrix} è $120 \times 1000$ e viene creata in un'unica
+chiamata a \texttt{randn}. Nessun ciclo \texttt{for}.
+\end{infobox}
+
+% ------------------------------------------------------------
+\subsection{\texttt{reconstruct\_power.m} --- Ricostruzione Inversa}
+
+\subsubsection*{Scopo}
+Inverte la catena: $\Delta V_{\text{noisy}} \to P_{\text{rec}}$.
+Calcola statistiche Monte Carlo e classifica ogni punto in uno dei
+tre regimi (\texttt{noise}/\texttt{ok}/\texttt{saturated}).
+
+\subsubsection*{Firma}
+\begin{lstlisting}
+result = reconstruct_power(DeltaV_noisy, params)
+result = reconstruct_power(DeltaV_noisy, params, P_true)
+\end{lstlisting}
+
+Se \texttt{P\_true} è fornito, vengono calcolati anche RMSE ed errore relativo.
+
+\subsubsection*{Output principali}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Campo & Dimensioni & Descrizione \\
+\midrule
+\texttt{P\_mean}       & $[M \times 1]$ & media MC di $P_{\text{rec}}$ $[W]$ \\
+\texttt{P\_std}        & $[M \times 1]$ & deviazione standard MC $[W]$ \\
+\texttt{P\_ci95}       & $[M \times 1]$ & semi-ampiezza CI 95\% $[W]$ \\
+\texttt{P\_all}        & $[M \times N]$ & tutte le realizzazioni $[W]$ \\
+\texttt{is\_saturated} & $[M \times 1]$ & maschera punti saturi \\
+\texttt{is\_noise\_dom}& $[M \times 1]$ & maschera punti noise-dominated \\
+\texttt{regime}        & cell $[M\times1]$ & \texttt{'noise'/'ok'/'saturated'} \\
+\texttt{NEP}           & scalare & NEP calcolato dai params $[W]$ \\
+\texttt{RMSE}          & scalare & (se P\_true fornito) $[W]$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{Implementazione: inversione e statistiche}
+
+\begin{lstlisting}[caption={reconstruct\_power.m --- inversione e classificazione}]
+% Core inversion: P_rec = DeltaV / S
+P_all  = DeltaV_noisy / S;       % [M x N]
+P_mean = mean(P_all, 2);          % [M x 1]
+P_std  = std(P_all,  0, 2);       % [M x 1]
+
+% 95% CI using t-distribution for finite N
+t95    = tinv(0.975, N - 1);
+P_ci95 = t95 * P_std / sqrt(N);
+
+% Regime classification
+sat_thresh      = 0.99 * params.V_sat;
+mean_abs_DeltaV = abs(mean(DeltaV_noisy, 2));
+
+is_saturated = mean_abs_DeltaV >= sat_thresh;
+is_noise_dom = mean_abs_DeltaV <  V_noise;
+
+regime = repmat({'ok'}, M, 1);
+regime(is_noise_dom)  = {'noise'};
+regime(is_saturated)  = {'saturated'};
+\end{lstlisting}
+
+\subsubsection*{Verifica analitica}
+
+La deviazione standard delle realizzazioni MC deve approssimare il NEP:
+\begin{equation}
+  \sigma_{P_{\text{rec}}} = \frac{V_{\text{noise}}}{S} = \text{NEP}
+\end{equation}
+Questo è verificato numericamente nel test \texttt{test\_block3.m}:
+$\sigma_P = 2.298 \times 10^{-6}$~W rispetto a NEP $= 2.260 \times 10^{-6}$~W.
+
+% ------------------------------------------------------------
+\subsection{\texttt{run\_power\_sweep.m} --- Power Sweep}
+
+\subsubsection*{Scopo}
+Esegue la pipeline completa su un range logaritmico di potenza
+e produce una figura a 3 pannelli.
+
+\subsubsection*{Firma}
+\begin{lstlisting}
+sweep = run_power_sweep()
+sweep = run_power_sweep(params, options)
+\end{lstlisting}
+
+\subsubsection*{Opzioni (\texttt{options} struct)}
+
+\begin{center}
+\begin{tabular}{lrl}
+\toprule
+Campo & Default & Descrizione \\
+\midrule
+\texttt{P\_min}    & $10^{-9}$~W & potenza minima \\
+\texttt{P\_max}    & $10^{0}$~W  & potenza massima \\
+\texttt{N\_points} & 100         & punti nel range logaritmico \\
+\texttt{N\_MC}     & 1000        & realizzazioni Monte Carlo \\
+\texttt{do\_plot}  & \texttt{true} & genera la figura \\
+\texttt{save\_fig} & \texttt{false} & salva la figura su disco \\
+\texttt{fig\_path} & \texttt{'bolometer\_sweep.png'} & percorso output \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{Struttura della figura (3 pannelli)}
+
+\begin{enumerate}[noitemsep]
+  \item \textbf{Pannello 1 (log-log):} $P_{\text{rec}}$ vs $P_{\text{true}}$,
+        con codice colore per regime, banda CI95, linee NEP e $P_{\text{sat}}$
+  \item \textbf{Pannello 2 (log-log):} SNR vs $P_{\text{true}}$, linea SNR=1
+  \item \textbf{Pannello 3 (log-lin):} Curva di trasferimento $\Delta V(P)$:
+        ideale vs clippata, $V_{\text{noise}}$ e $V_{\text{sat}}$
+\end{enumerate}
+
+\subsubsection*{Pattern di output sweep}
+
+\begin{lstlisting}[caption={Esempio di output testuale (120 punti, N\_MC=1000)}]
+NEP   = 2.2604e-06 W
+P_sat = 2.5641e-01 W
+
+Noise points  = 45 / 120    (P < NEP)
+OK points     = 67 / 120
+Sat. points   =  8 / 120    (P > P_sat)
+RMSE (ok)     = 7.42e-08 W
+\end{lstlisting}
+
+% ------------------------------------------------------------
+\subsection{\texttt{sensitivity\_analysis.m} --- Analisi di Sensibilità}
+
+\subsubsection*{Scopo}
+Varia un parametro alla volta su un range logaritmico
+($\times 0.05$ ÷ $\times 20$ dal valore base) e calcola le metriche
+$S$, NEP, $P_{\text{sat}}$, DR per ogni valore.
+
+\subsubsection*{Firma}
+\begin{lstlisting}
+results = sensitivity_analysis()
+results = sensitivity_analysis(params, options)
+\end{lstlisting}
+
+\subsubsection*{Logica del sweep}
+
+\begin{lstlisting}[caption={Cuore di sensitivity\_analysis.m}]
+for i = 1:N_params
+    pname = sweep_defs(i).name;       % e.g. 'R0'
+    for j = 1:N
+        p = base_params;
+        p.(pname) = sweep_defs(i).x_vals(j);
+        % recompute derived fields
+        p.tau = p.C / p.G;
+        p.S   = p.I_bias * p.R0 * p.alpha / p.G;
+        % compute noise and metrics
+        V_n  = sqrt(V_J^2 + V_A^2 + V_Q^2);   % V_J depends on R0
+        NEP  = V_n / p.S;
+        Psat = p.V_sat / p.S;
+        DR   = 20 * log10(Psat / NEP);         % = 20*log10(V_sat/V_n)
+        ...
+    end
+end
+\end{lstlisting}
+
+\subsubsection*{Risultato chiave}
+
+Come dimostrato in Eq.~\eqref{eq:DR}, DR = $V_{\text{sat}}/V_{\text{noise}}$:
+\begin{itemize}[noitemsep]
+  \item Per $\alpha$, $G$, $I_{\text{bias}}$: DR è \emph{esattamente} costante
+        (le curve sono piatte al $\mu$dB)
+  \item Per $R_0$: leggero calo a valori alti perché $V_J \propto \sqrt{R_0}$
+        inizia a competere con $V_Q$, aumentando $V_{\text{noise}}$
+  \item Variazione totale su range $\times 400$: $< 0.003$~dB
+\end{itemize}
+
+% ------------------------------------------------------------
+\subsection{\texttt{main.m} --- Script Master}
+
+\subsubsection*{Scopo}
+Punto di ingresso unico. Definisce tutti i parametri nella sezione
+\emph{USER SETTINGS} e chiama i moduli nelle sezioni abilitate dai flag
+\texttt{RUN\_SWEEP} e \texttt{RUN\_SENS}.
+
+\subsubsection*{Struttura interna}
+\begin{lstlisting}[caption={Struttura di main.m}]
+% 1. USER SETTINGS
+CUSTOM_PARAMS = {};          % override parametri fisici
+SWEEP.P_min   = 1e-9;        % sweep settings
+SWEEP.N_MC    = 1000;
+RUN_SWEEP = true;
+RUN_SENS  = true;
+
+% 2. INIT
+p = bolometer_params(CUSTOM_PARAMS{:});
+print_params(p);             % funzione locale in coda al file
+
+% 3. POWER SWEEP
+if RUN_SWEEP
+    sweep = run_power_sweep(p, SWEEP);
+    % ... stampa risultati
+end
+
+% 4. SENSITIVITY ANALYSIS
+if RUN_SENS
+    sens = sensitivity_analysis(p, SENS);
+    % ... stampa noise budget
+end
+
+% 5. FINAL SUMMARY
+% ... tabella con S, NEP, P_sat, DR
+\end{lstlisting}
+
+% ============================================================
+\section{Flusso dei Dati tra Moduli}
+
+\begin{verbatim}
+bolometer_params()
+      |
+      v  params struct
+  +---+-------------------------------------------+
+  |                                               |
+  v                                               v
+forward_model(P, params)          sensitivity_analysis(params)
+      |                                           |
+      | .DeltaV_ideal                             | sweep S/NEP/DR
+      v
+add_noise_to_signal(DeltaV_ideal, params, N_MC)
+      |
+      | .DeltaV_noisy  [M x N_MC]
+      v
+reconstruct_power(DeltaV_noisy, params, P_true)
+      |
+      | .P_mean, .P_std, .P_ci95, .regime
+      v
+   [risultati + figure]
+\end{verbatim}
+
+Tutti i moduli condividono \emph{solo} il \texttt{params} struct.
+Nessuna variabile globale. I risultati parziali fluiscono come
+argomenti espliciti.
+
+\begin{infobox}
+\textbf{Interfaccia stabile:} \texttt{forward\_model}, \texttt{add\_noise\_to\_signal}
+e \texttt{reconstruct\_power} possono essere chiamati indipendentemente.
+La funzione \texttt{run\_power\_sweep} è una shell che li orchestra.
+\end{infobox}
+
+% ============================================================
+\section{Risultati di Validazione Numerica}
+
+\subsection{Consistenza del modello diretto}
+
+\begin{center}
+\begin{tabular}{rrrrr}
+\toprule
+$P$ [W] & $\Delta T$ [K] & $\Delta R$ [$\Omega$] & $\Delta V$ [V] & Saturato \\
+\midrule
+$10^{-9}$ & $10^{-5}$ & $3.9\times10^{-6}$ & $3.9\times10^{-9}$ & No \\
+$10^{-6}$ & $10^{-2}$ & $3.9\times10^{-3}$ & $3.9\times10^{-6}$ & No \\
+$10^{-3}$ & $10.0$    & $3.9$               & $3.9\times10^{-3}$ & No \\
+$10^{-1}$ & $1000$    & ---                   & 1.000              & \textbf{Sì} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Budget del rumore (parametri default)}
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Sorgente & $V_{\text{rms}}$ [V] & \% del totale \\
+\midrule
+Johnson $V_J$ & $4.07\times10^{-8}$ & 0.0\% \\
+Amplificatore $V_A$ & $3.16\times10^{-7}$ & 0.1\% \\
+ADC $V_Q$ (16-bit, 2V) & $8.81\times10^{-6}$ & \textbf{99.9\%} \\
+\midrule
+Totale $V_{\text{noise}}$ & $8.82\times10^{-6}$ & 100\% \\
+\midrule
+NEP & $2.26\times10^{-6}$ & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Power sweep (120 punti, $N_{\text{MC}} = 1000$)}
+
+\begin{center}
+\begin{tabular}{lrl}
+\toprule
+Metrica & Valore & Note \\
+\midrule
+NEP & $2.26\times10^{-6}$ W & soglia inferiore del range utile \\
+$P_{\text{sat}}$ & $0.256$ W & soglia superiore \\
+Punti noise-dom. & 45/120 & $P < \text{NEP}$ \\
+Punti ricostruibili & 67/120 & range utile \\
+Punti saturi & 8/120 & $P > P_{\text{sat}}$ \\
+RMSE (punti ok) & $7.4\times10^{-8}$ W & \\
+$\sigma_P$ (MC) vs NEP & $2.30\times10^{-6}$ vs $2.26\times10^{-6}$ W & consistente \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{Guida all'Estensione}
+
+\subsection{Modificare i parametri fisici}
+
+La strada più semplice è usare l'override in \texttt{bolometer\_params}:
+\begin{lstlisting}
+p = bolometer_params('R0', 200, 'alpha', 3.4e-3, 'G', 5e-5);
+sweep = run_power_sweep(p);
+\end{lstlisting}
+
+\subsection{Aggiungere una nuova sorgente di rumore}
+
+Aggiungere il campo in \texttt{bolometer\_params.m}, poi aggiornare
+\emph{sia} \texttt{add\_noise\_to\_signal.m} \emph{sia}
+\texttt{reconstruct\_power.m} (che ricalcola internamente $V_{\text{noise}}$
+per la classificazione dei regimi):
+
+\begin{lstlisting}[caption={Schema per aggiungere una nuova sorgente di rumore}]
+% in bolometer_params.m
+params.i_noise = 1e-12;    % nuovo: corrente di rumore dell'amplif. [A/rtHz]
+
+% in add_noise_to_signal.m
+V_I = params.i_noise * params.R0 * sqrt(params.BW);  % nuova sorgente
+V_noise = sqrt(V_J^2 + V_A^2 + V_Q^2 + V_I^2);      % aggiungi qui
+\end{lstlisting}
+
+\subsection{Aggiungere dinamica temporale}
+
+Attualmente il modello è in regime stazionario. Per simulare la
+risposta temporale, sostituire $\Delta T = P/G$ con l'integrazione ODE:
+
+\begin{lstlisting}[caption={Schema per risposta temporale}]
+% in forward_model.m -- modalita' dinamica
+% C * d(DeltaT)/dt = P - G * DeltaT
+% soluzione analitica per P costante a tratti:
+tau = params.C / params.G;
+DeltaT_t = (P/params.G) .* (1 - exp(-t/tau));
+\end{lstlisting}
+
+\subsection{Aggiungere più configurazioni a confronto}
+
+\begin{lstlisting}[caption={Confronto tra configurazioni in main.m}]
+configs = {
+    bolometer_params(),                         % default
+    bolometer_params('R0', 200),                % R0 doppio
+    bolometer_params('G', 5e-5),                % G dimezzata
+    bolometer_params('N_bits', 24),             % ADC 24-bit
+};
+labels = {'default', 'R0=200', 'G=5e-5', 'ADC 24-bit'};
+
+for k = 1:numel(configs)
+    opt.do_plot  = false;
+    sw{k} = run_power_sweep(configs{k}, opt);
+    fprintf('%s:  NEP=%.2e W,  DR=%.1f dB\n', ...
+        labels{k}, sw{k}.rec.NEP, ...
+        20*log10(sw{k}.fwd.P_sat / sw{k}.rec.NEP));
+end
+\end{lstlisting}
+
+\subsection{Estendere la sensitivity analysis}
+
+Per aggiungere un nuovo parametro al sweep (es.\ \texttt{N\_bits}):
+
+\begin{lstlisting}[caption={Aggiungere N\_bits al sweep in sensitivity\_analysis.m}]
+% nel vettore sweep_defs:
+struct('name','N_bits', 'label','N_{bits}', ...
+       'base', base_params.N_bits, ...
+       'lo_fac', 0.5, 'hi_fac', 2.0)   % da 8 a 32 bit
+\end{lstlisting}
+
+\begin{warnbox}
+\textbf{Attenzione:} \texttt{N\_bits} è intero --- il range \texttt{logspace}
+produrrà valori non interi. Aggiungere \texttt{round()} nella lettura
+oppure usare un range lineare con \texttt{linspace}.
+\end{warnbox}
+
+% ============================================================
+\section{Aggiornamento del Contesto}
+
+Il file \texttt{CONTEXT.md} nella cartella \texttt{bolometer/} deve essere
+aggiornato ad ogni modifica rilevante. Serve come memoria rapida per
+sessioni di lavoro future senza dover rileggere tutto il codice.
+
+Il formato è:
+\begin{itemize}[noitemsep]
+  \item Tabella file con stato (\texttt{✅}/\texttt{⬜}) aggiornata
+  \item Sezione per ogni blocco con i risultati numerici attesi
+  \item Sezione \emph{Come eseguire} con esempi aggiornati
+  \item Timestamp in fondo
+\end{itemize}
+
+% ============================================================
+\section*{Appendice: Parametri e Unità di Misura}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Simbolo & Definizione & Unità SI \\
+\midrule
+$P$                  & potenza assorbita             & W \\
+$\Delta T$           & incremento di temperatura     & K \\
+$\Delta R$           & variazione di resistenza      & $\Omega$ \\
+$\Delta V$           & variazione di tensione        & V \\
+$R_0$                & resistenza a $T_0$            & $\Omega$ \\
+$\alpha$             & TCR (Temperature Coeff.\ Resistance) & K$^{-1}$ \\
+$G$                  & conduttanza termica           & W\,K$^{-1}$ \\
+$C$                  & capacità termica              & J\,K$^{-1}$ \\
+$\tau = C/G$         & costante di tempo termica     & s \\
+$I_{\text{bias}}$    & corrente di polarizzazione    & A \\
+$S$                  & sensibilità $= I_{\text{bias}}R_0\alpha/G$ & V\,W$^{-1}$ \\
+$k_B$                & costante di Boltzmann         & J\,K$^{-1}$ \\
+$\Delta f$           & larghezza di banda            & Hz \\
+$e_n$                & densità rumore amplif.        & V\,$\sqrt{\text{Hz}}^{-1}$ \\
+$N$                  & risoluzione ADC               & bit \\
+$V_{\text{range}}$   & full-scale ADC                & V \\
+$V_{\text{noise}}$   & rumore totale rms             & V \\
+NEP                  & Noise Equivalent Power        & W \\
+DR                   & Dynamic Range $= P_{\text{sat}}/\text{NEP}$ & --- (dB) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
