@@ -2,10 +2,8 @@
 
 ## Obiettivo
 
-Questi due blocchi costituiscono la base del simulatore di bolometro.
-Partendo da una potenza in ingresso, si ottiene la variazione di tensione
-misurata dal sensore (modello diretto), a cui viene poi aggiunto rumore
-realistico.
+Blocco 1: modello diretto che converte la potenza assorbita in tensione di uscita.
+Blocco 2: aggiunta di rumore generico gaussiano al segnale.
 
 ---
 
@@ -13,20 +11,19 @@ realistico.
 
 **File:** `bolometer_params.m`, `forward_model.m`
 
-### Catena fisica implementata
+### Catena fisica
 
 ```
 P [W]  →  ΔT = P / G  →  ΔR = R₀·α·ΔT  →  ΔV = I_bias·ΔR
 ```
 
-| Passo | Equazione | Variabile |
-|-------|-----------|-----------|
-| Bilancio termico (regime staz.) | `ΔT = P / G` | `G` = conduttanza [W/K] |
-| Variazione resistenza (TCR) | `ΔR = R₀·α·ΔT` | `α` = TCR [1/K] |
-| Lettura con corrente di bias | `ΔV = I_bias·ΔR` | `I_bias` [A] |
-| **Sensibilità** | `S = ΔV/P = I_bias·R₀·α/G` | `S` [V/W] |
+| Passo | Equazione |
+|-------|-----------|
+| Bilancio termico (regime stazionario) | `ΔT = P / G` |
+| Variazione resistenza (TCR) | `ΔR = R₀·α·ΔT` |
+| Lettura con corrente di bias | `ΔV = I_bias·ΔR` |
 
-La funzione `forward_model` gestisce anche la **saturazione** in due casi:
+La funzione gestisce anche la **saturazione** in due casi:
 - Termica: `ΔT > ΔT_max` (sensore danneggiato)
 - Elettronica: `|ΔV| > V_sat` (amplificatore al rail)
 
@@ -36,24 +33,24 @@ La funzione `forward_model` gestisce anche la **saturazione** in due casi:
 |-----------|---------|--------|-------|
 | Resistenza | R₀ | 100 | Ω |
 | TCR (Pt) | α | 3.9×10⁻³ | 1/K |
-| Cond. termica | G | 1×10⁻⁴ | W/K |
+| Conduttanza termica | G | 1×10⁻⁴ | W/K |
+| Capacità termica | C | 1×10⁻⁶ | J/K |
 | Corrente bias | I_bias | 1×10⁻³ | A |
-| Temp. base | T₀ | 300 | K |
-| Sat. tensione | V_sat | 1.0 | V |
-| **Sensibilità** | **S** | **3.90** | **V/W** |
-| **P_sat = V_sat/S** | | **0.256** | **W** |
+| Temperatura base | T₀ | 300 | K |
+| Saturazione tensione | V_sat | 1.0 | V |
+| Saturazione termica | ΔT_max | 50 | K |
+| Banda | BW | 1×10³ | Hz |
 
 ### Uso
 
 ```matlab
-p   = bolometer_params();                    % parametri default
-p2  = bolometer_params('R0', 200, 'G', 5e-5); % con override
-
+p   = bolometer_params();
 fwd = forward_model(P_array, p);
 % fwd.DeltaT       → temperatura [K]
 % fwd.DeltaV_ideal → tensione ideale [V]
-% fwd.DeltaV       → tensione clippata [V]
+% fwd.DeltaV       → tensione con saturazione [V]
 % fwd.is_saturated → maschera punti saturi
+% fwd.P_sat        → potenza di saturazione [W]
 ```
 
 ---
@@ -62,58 +59,49 @@ fwd = forward_model(P_array, p);
 
 **File:** `add_noise_to_signal.m`
 
-### Tre sorgenti indipendenti (somma in quadratura)
+Il rumore è modellato come un unico termine gaussiano di ampiezza `V_noise` (generico, senza decomposizione fisica).
 
-| Sorgente | Formula | Valore default |
-|----------|---------|----------------|
-| Johnson (termico) | `V_J = √(4·kB·T₀·R₀·BW)` | ~4.1×10⁻⁸ V |
-| Amplificatore | `V_A = e_n·√BW` (e_n=10 nV/√Hz) | ~3.2×10⁻⁷ V |
-| ADC quantizzazione | `V_Q = (V_range/2^N)/√12` (16-bit) | ~8.8×10⁻⁶ V |
-| **Totale** | somma in quadratura | **~8.8×10⁻⁶ V** |
-| **NEP = V_noise/S** | | **~2.26×10⁻⁶ W** |
+| Parametro | Valore default |
+|-----------|----------------|
+| V_noise (rms) | 1×10⁻⁵ V |
+| NEP = V_noise · G / (I_bias·R₀·α) | ~2.56×10⁻⁶ W |
 
-> **La sorgente dominante è l'ADC** (99.9% della varianza).
-
-### Uso con Monte Carlo
+### Uso
 
 ```matlab
-% N = numero di realizzazioni (per analisi statistica)
-nr = add_noise_to_signal(fwd.DeltaV_ideal, p, 1000);
-% nr.DeltaV_noisy  → matrice [M × N] segnali rumorosi
-% nr.V_noise_total → rumore totale rms [V]
-% nr.SNR           → SNR per punto [lineare]
-% nr.NEP           → NEP [W]
+nr = add_noise_to_signal(fwd.DeltaV, p);
+% nr.DeltaV_noisy → segnale con rumore [V]
+% nr.V_noise      → ampiezza rumore rms [V]
+% nr.SNR          → SNR per punto [lineare]
+% nr.NEP          → rumore equivalente in potenza [W]
 ```
 
-### Comportamento atteso
+### Regimi
 
-| Potenza | SNR | Regime |
-|---------|-----|--------|
-| P ≪ NEP | < 1 | **Rumore dominante** — P_rec inutilizzabile |
-| NEP < P < P_sat | ≫ 1 | **Ricostruibile** — buona misura |
-| P > P_sat | — | **Saturato** — amplificatore al rail |
+| Regime | Condizione |
+|--------|-----------|
+| Rumore dominante | SNR < 1 |
+| Ricostruibile | SNR ≥ 1 e non saturato |
+| Saturato | ΔT > ΔT_max oppure \|ΔV\| > V_sat |
 
 ---
 
-## Come eseguire il test
+## Come eseguire
 
 ```matlab
 cd blocco_1_2/
 test_blocchi_1_2
 ```
 
-Il test stampa il budget del rumore, la tabella SNR per 5 potenze,
-verifica la consistenza `σ(P_rec) ≈ NEP` e salva la figura
-`blocchi_1_2_risultati.png`.
+Produce una figura con due pannelli: segnale ideale e segnale reale (saturazione + rumore), salvata in `blocchi_1_2_risultati.png`.
 
 ---
 
-## File in questa cartella
+## File
 
 | File | Blocco | Descrizione |
 |------|--------|-------------|
-| `bolometer_params.m` | 1 | Parametri fisici e di rumore |
+| `bolometer_params.m` | 1 | Parametri fisici del bolometro |
 | `forward_model.m` | 1 | P → ΔT → ΔR → ΔV con saturazione |
-| `add_noise_to_signal.m` | 2 | Rumore Johnson + amplif. + ADC, Monte Carlo |
-| `test_blocchi_1_2.m` | 1+2 | Test unificato con figura riassuntiva |
-| `README.md` | — | Questo file |
+| `add_noise_to_signal.m` | 2 | Rumore gaussiano generico |
+| `test_blocchi_1_2.m` | 1+2 | Test con figura riassuntiva |
