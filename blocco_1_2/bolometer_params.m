@@ -1,20 +1,20 @@
 function params = bolometer_params()
-% Returns a struct with bolometer parameters.
+% Restituisce uno struct con tutti i parametri del bolometro.
 %
-% Physical model:   P -> DeltaT = P/G -> DeltaR = R0*alpha*DeltaT
+% Modello fisico:   P -> DeltaT = P/G -> DeltaR = R0*alpha*DeltaT
 %                   -> DeltaV = I_bias * DeltaR
 
-    params.R0      = 100;       % resistance at base temp     [Ohm]
-    params.alpha   = 3.9e-3;   % TCR (Platinum)              [1/K]
-    params.G       = 1e-4;     % thermal conductance         [W/K]
-    params.C       = 1e-6;     % thermal capacitance         [J/K]
-    params.I_bias  = 1e-3;     % bias current                [A]
-    params.T0      = 300;      % base temperature            [K]
-    params.V_sat   = 1.0;      % amplifier saturation level  [V]
-    params.dT_max  = 50;       % max safe temperature rise   [K]
-    params.BW      = 1e3;      % measurement bandwidth       [Hz]
+    params.R0      = 100;       % resistenza a temperatura base         [Ohm]
+    params.alpha   = 3.9e-3;   % coefficiente termico TCR (Platino)    [1/K]
+    params.G       = 1e-4;     % conduttanza termica                   [W/K]
+    params.C       = 1e-6;     % capacita' termica                     [J/K]
+    params.I_bias  = 1e-3;     % corrente di polarizzazione            [A]
+    params.T0      = 300;      % temperatura di riferimento            [K]
+    params.V_sat   = 1.0;      % tensione di saturazione amplificatore [V]
+    params.dT_max  = 50;       % massimo incremento termico sicuro     [K]
+    params.BW      = 1e3;      % larghezza di banda                    [Hz]
 
-    params.V_noise = 1e-5;     % generic rms noise amplitude [V]
+    params.V_noise = 1e-5;     % rumore rms generico                   [V]
 
     params.tau = params.C / params.G;
 end

@@ -1,33 +1,33 @@
 function result = forward_model(P, params)
-% Forward bolometer model:  P [W]  ->  DeltaT [K]  ->  DeltaV [V]
+% Modello diretto del bolometro:  P [W]  ->  DeltaT [K]  ->  DeltaV [V]
 %
-% Inputs:
-%   P       : absorbed power, scalar or array [W]
-%   params  : struct from bolometer_params()
+% Ingressi:
+%   P       : potenza assorbita, scalare o array [W]
+%   params  : struct restituito da bolometer_params()
 %
-% Outputs:
-%   result.DeltaT       temperature rise above T0          [K]
-%   result.DeltaR       resistance change                  [Ohm]
-%   result.DeltaV_ideal ideal (no-noise) voltage signal    [V]
-%   result.DeltaV       output voltage (clipped at V_sat)  [V]
-%   result.is_saturated logical array, true where clipping occurred
-%   result.P_sat        power level at which V_sat is reached [W]
+% Uscite:
+%   result.DeltaT       incremento di temperatura rispetto a T0  [K]
+%   result.DeltaR       variazione di resistenza                  [Ohm]
+%   result.DeltaV_ideal tensione ideale (senza rumore)           [V]
+%   result.DeltaV       tensione in uscita (clippata a V_sat)    [V]
+%   result.is_saturated array logico, true dove avviene saturazione
+%   result.P_sat        potenza alla quale si raggiunge V_sat    [W]
 %
-% Physics:
-%   P = G * DeltaT   (steady-state thermal balance)
-%   DeltaR = R0 * alpha * DeltaT   (TCR)
-%   DeltaV = I_bias * DeltaR       (current bias)
+% Fisica:
+%   P = G * DeltaT   (bilancio termico in regime stazionario)
+%   DeltaR = R0 * alpha * DeltaT   (TCR: variazione resistenza con T)
+%   DeltaV = I_bias * DeltaR       (corrente di bias costante)
 
-    % step 1: thermal
+    % passo 1: bilancio termico -> incremento di temperatura
     result.DeltaT = P / params.G;
 
-    % step 2: resistance
+    % passo 2: variazione di resistenza tramite TCR
     result.DeltaR = params.R0 * params.alpha .* result.DeltaT;
 
-    % step 3: ideal voltage
+    % passo 3: tensione ideale con corrente di bias costante
     result.DeltaV_ideal = params.I_bias .* result.DeltaR;
 
-    % step 4: saturation (thermal damage or amplifier rail)
+    % passo 4: saturazione (danno termico oppure amplificatore al rail)
     thermal_sat      = result.DeltaT > params.dT_max;
     electric_sat     = abs(result.DeltaV_ideal) > params.V_sat;
     result.is_saturated = thermal_sat | electric_sat;
