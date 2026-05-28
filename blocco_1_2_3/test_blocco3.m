@@ -25,7 +25,6 @@ figure('Name','Blocco 3 - Densita di potenza', ...
 
 f_lim = [3e14, 3e18];
 
-f_lim = [3e14, 3e18];
 
 % pannello 1: radianza di Planck
 ax1 = subplot(1,3,1);
