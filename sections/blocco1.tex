@@ -1,0 +1,104 @@
+% =====================================================================
+%  BLOCCO 1 --- Modello fisico del bolometro e modello diretto
+% =====================================================================
+
+\section{Blocco 1 --- Modello diretto}
+
+% --- Slide: cos'è un bolometro ---
+\begin{frame}
+\frametitle{Cos'\`e un bolometro?}
+
+Un \textbg{bolometro} \`e un sensore termico che misura la potenza
+irradiata assorbita convertendola in una variazione di resistenza elettrica.
+
+\vspace{0.4em}
+\begin{columns}[T]
+  \begin{column}{0.55\textwidth}
+    \textbf{Principio di funzionamento:}
+    \begin{enumerate}
+      \item La radiazione incidente deposita potenza $P$ sull'assorbitore
+      \item L'assorbitore si riscalda: $\Delta T = P / G$
+      \item La resistenza varia: $\Delta R = R_0\,\alpha\,\Delta T$
+      \item Il circuito di bias converte $\Delta R$ in tensione: $\Delta V = I_\text{bias}\,\Delta R$
+    \end{enumerate}
+  \end{column}
+  \begin{column}{0.42\textwidth}
+    \textbf{Parametri fondamentali:}
+    \begin{itemize}
+      \item $R_0 = \SI{100}{\ohm}$ \quad resistenza a freddo
+      \item $\alpha = \SI{3.9e-3}{\per\kelvin}$ \quad TCR del Pt
+      \item $G = \SI{1e-4}{\watt\per\kelvin}$ \quad conduttanza termica
+      \item $I_\text{bias} = \SI{1}{\milli\ampere}$ \quad corrente di polarizzazione
+      \item $T_0 = \SI{300}{\kelvin}$ \quad temperatura base
+    \end{itemize}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+% --- Slide: catena segnale ---
+\begin{frame}
+\frametitle{Catena del segnale --- Blocco~1}
+
+La catena di trasduzione dal segnale fisico alla tensione di uscita:
+
+\vspace{0.6em}
+\[
+  P \;\longrightarrow\;
+  \Delta T = \frac{P}{G} \;\longrightarrow\;
+  \Delta R = R_0\,\alpha\,\Delta T \;\longrightarrow\;
+  \Delta V_\text{ideal} = I_\text{bias}\,\Delta R
+\]
+
+\vspace{0.5em}
+Sostituendo esplicitamente:
+\[
+  \boxed{\Delta V_\text{ideal} = \frac{I_\text{bias}\,R_0\,\alpha}{G}\,P
+         \;=\; S \cdot P}
+\]
+
+dove la \textbf{sensibilit\`a} vale $S = I_\text{bias}\,R_0\,\alpha / G
+= \SI{3.9}{\volt\per\watt}$.
+
+\vspace{0.4em}
+\begin{block}{Saturazione}
+  \begin{itemize}
+    \item \textbr{Termica}: $\Delta T > \Delta T_\text{max} = \SI{50}{\kelvin}
+          \;\Rightarrow\; P_\text{sat} = G\,\Delta T_\text{max} = \SI{5e-3}{\watt}$
+    \item \textbr{Elettrica}: $|\Delta V_\text{ideal}| > V_\text{sat} = \SI{1}{\volt}
+          \;\Rightarrow\; P_\text{sat,el} \approx \SI{0.26}{\watt}$
+  \end{itemize}
+  La saturazione termica interviene \textbf{prima}: $\Delta V = \pm V_\text{sat}$ se saturato.
+\end{block}
+
+\end{frame}
+
+% --- Slide: risultati numerici ---
+\begin{frame}
+\frametitle{Risultati numerici --- Blocco~1}
+
+Risposta del bolometro per cinque livelli di potenza di riferimento:
+
+\vspace{0.5em}
+\begin{center}
+\begin{tabular}{ccccl}
+  \toprule
+  $P$~[W] & $\Delta T$~[K] & $\Delta V_\text{ideal}$~[V] & $\Delta V$~[V] & Regime \\
+  \midrule
+  \num{1e-9} & \num{1e-5}  & \num{3.9e-6}  & \num{3.9e-6}  & OK \\
+  \num{1e-7} & \num{1e-3}  & \num{3.9e-4}  & \num{3.9e-4}  & OK \\
+  \num{1e-5} & \num{0.1}   & \num{3.9e-2}  & \num{3.9e-2}  & OK \\
+  \num{1e-3} & \num{10}    & \num{3.9}     & \num{3.9}     & OK \\
+  \num{1e-1} & \num{1000}  & \num{390}     & \num{1.0}     & \textbr{SATURATO} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.4em}
+\small
+$P_\text{sat} = V_\text{sat}\,G\,/\,(I_\text{bias}\,R_0\,\alpha)
+= \SI{2.56e-1}{\watt}$ \quad (saturazione elettrica)\\
+Saturazione termica: $P = G\,\Delta T_\text{max} = \SI{5e-3}{\watt}$
+\quad $\Rightarrow$ \textbg{termica domina}
+
+\end{frame}
