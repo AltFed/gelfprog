@@ -10,3 +10,7 @@ in realta arriva la potenza, si scalda di una certa T, e poi ho una differenza d
 ipotizziamo uina certa densità di potenza con un range, e poi lo misuriamo e ricostruisiamo e in caso si accoppia.
 
 data w, prendo delta V ci metto rumore e poi ricostruisco potenza. (ad esempio con montecarlo per vedere come viene propragato il rumore e per trovare i limiti di sensitività)  
+
+passiamo distribuzione di potenza in funzione di F, densità di potenza per unità di frequenza ( corpo nero)
+
+
