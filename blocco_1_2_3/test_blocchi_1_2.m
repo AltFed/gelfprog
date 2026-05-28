@@ -85,6 +85,8 @@ sat_m = fwd_sw.is_saturated;
 ok_m  = ~sat_m & nr_sw.SNR >= 1;
 ns_m  = ~sat_m & nr_sw.SNR <  1;
 
+ax_style = {'Color','w','XColor','k','YColor','k','GridColor',[0.8 0.8 0.8]};
+
 % pannello sx: segnale ideale (no clip, arancione continua oltre V_sat)
 ax1 = subplot(1,2,1);
 hold on; grid on; box on;
@@ -95,10 +97,10 @@ loglog(P_sweep(sat_m), abs(fwd_sw.DeltaV_ideal(sat_m)), '-',   'LineWidth', 2, '
 yline(p.V_noise, 'r:',  'LineWidth', 1.5, 'Label', 'V_{noise}', 'HandleVisibility', 'off');
 yline(p.V_sat,   'm-.', 'LineWidth', 1.5, 'Label', 'V_{sat}',   'HandleVisibility', 'off');
 
-set(ax1, 'XScale', 'log', 'YScale', 'log');
+set(ax1, 'XScale','log', 'YScale','log', ax_style{:});
 xlabel('P_{true} [W]'); ylabel('|\DeltaV| [V]');
-title('Segnale ideale');
-legend('Location', 'northwest', 'FontSize', 9);
+title('Segnale ideale', 'Color','k');
+legend('Location','northwest', 'FontSize',9, 'TextColor','k');
 
 % pannello dx: segnale reale (saturato a V_sat, rumoroso scatter)
 ax2 = subplot(1,2,2);
@@ -110,10 +112,10 @@ loglog(P_sweep(sat_m), abs(nr_sw.DeltaV_noisy(sat_m)), '-',   'LineWidth', 2,  '
 yline(p.V_noise, 'r:',  'LineWidth', 1.5, 'Label', 'V_{noise}', 'HandleVisibility', 'off');
 yline(p.V_sat,   'm-.', 'LineWidth', 1.5, 'Label', 'V_{sat}',   'HandleVisibility', 'off');
 
-set(ax2, 'XScale', 'log', 'YScale', 'log');
+set(ax2, 'XScale','log', 'YScale','log', ax_style{:});
 xlabel('P_{true} [W]'); ylabel('|\DeltaV| [V]');
-title('Segnale reale (saturazione + rumore)');
-legend('Location', 'northwest', 'FontSize', 9);
+title('Segnale reale (saturazione + rumore)', 'Color','k');
+legend('Location','northwest', 'FontSize',9, 'TextColor','k');
 
 exportgraphics(gcf, 'blocchi_1_2_risultati.png', 'Resolution', 150);
 
