@@ -100,7 +100,7 @@ yline(p.V_sat,   'm-.', 'LineWidth', 1.5, 'Label', 'V_{sat}',   'HandleVisibilit
 set(ax1, 'XScale','log', 'YScale','log', ax_style{:});
 xlabel('P_{true} [W]'); ylabel('|\DeltaV| [V]');
 title('Segnale ideale', 'Color','k');
-legend('Location','northwest', 'FontSize',9, 'TextColor','k');
+legend('Location','northwest', 'FontSize',9, 'TextColor','k', 'Color','w', 'EdgeColor','k');
 
 % pannello dx: segnale reale (saturato a V_sat, rumoroso scatter)
 ax2 = subplot(1,2,2);
@@ -115,7 +115,7 @@ yline(p.V_sat,   'm-.', 'LineWidth', 1.5, 'Label', 'V_{sat}',   'HandleVisibilit
 set(ax2, 'XScale','log', 'YScale','log', ax_style{:});
 xlabel('P_{true} [W]'); ylabel('|\DeltaV| [V]');
 title('Segnale reale (saturazione + rumore)', 'Color','k');
-legend('Location','northwest', 'FontSize',9, 'TextColor','k');
+legend('Location','northwest', 'FontSize',9, 'TextColor','k', 'Color','w', 'EdgeColor','k');
 
 exportgraphics(gcf, 'blocchi_1_2_risultati.png', 'Resolution', 150);
 
