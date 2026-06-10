@@ -1,15 +1,4 @@
 function result = add_noise_to_signal(DeltaV, params)
-% Aggiunge rumore gaussiano generico al segnale di tensione del bolometro.
-%
-% Ingressi:
-%   DeltaV  : segnale di tensione (dopo saturazione), array 1D [V]
-%   params  : struct restituito da bolometer_params()
-%
-% Uscite:
-%   result.DeltaV_noisy   segnale rumoroso [V]
-%   result.V_noise        rumore rms       [V]
-%   result.SNR            SNR per ogni punto = |DeltaV| / V_noise
-%   result.NEP            potenza equivalente al rumore [W]
 
     DeltaV = DeltaV(:);
 

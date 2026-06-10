@@ -1,15 +1,4 @@
 function A = platinum_absorptance(f)
-% Assorbanza del platino in funzione della frequenza.
-% Modello semplificato: interpolazione lineare in spazio log-log
-% su valori chiave ricavati dalla letteratura (refractiveindex.info, CXRO).
-%
-% Formula usata: A = 1 - R,  R = ((n-1)^2 + k^2) / ((n+1)^2 + k^2)
-%
-% Ingresso:
-%   f : vettore di frequenze [Hz]
-%
-% Uscita:
-%   A : assorbanza del platino [adimensionale, 0-1]
 
     % punti chiave (frequenza [Hz], assorbanza)
     f_data = [3e14,  6e14,  1.5e15, 3e15,  3e16,  3e17,  3e18];
