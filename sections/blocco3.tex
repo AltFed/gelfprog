@@ -31,10 +31,11 @@ emessa dal plasma in un tokamak.
     \begin{enumerate}
       \item Calcolare la radianza spettrale $B(f,T)$
       \item Pesare con l'assorbanza del sensore $A(f)$
-      \item Integrare su tutte le frequenze\\
-            $\Rightarrow P_\text{abs}$~[\si{\watt\per\meter\squared\per\steradian}]
-      \item Passare lo spettro al modello diretto\\
-            $\Rightarrow \Delta V(f)$
+      \item Integrare su tutte le frequenze:\\
+            $P_\text{abs} = \int B\,A\,\mathrm{d}f$
+      \item Calcolare il rapporto\\
+            $\eta = P_\text{abs} / P_\text{emit}$
+      \item Studiare $\eta(T)$ al variare di $T$
     \end{enumerate}
   \end{column}
 \end{columns}
@@ -127,29 +128,65 @@ $P_\text{abs} = \int B\,A\,\mathrm{d}f$.
 
 \end{frame}
 
-% --- Slide: spettro attraverso il modello diretto ---
+% --- Slide: potenza assorbita risultato numerico ---
 \begin{frame}
-\frametitle{Uscita del bolometro per banda di frequenza}
+\frametitle{Potenza assorbita --- risultato numerico}
 
-L'integrando $B(f)\cdot A(f)$ viene trattato come un array di
-\textbf{potenze per banda} $P_i = B_i A_i \Delta f_i$ e
-passato al modello diretto:
+A $T_\text{nom} = \SI{85}{\electronvolt}$, l'integrazione numerica d\`a:
 
-\[
-  P_i \;\xrightarrow{\text{Blocco 1}}\; \Delta V_i
-  \;\xrightarrow{\text{Blocco 2}}\; \Delta V_{\text{noisy},i}
-\]
+\vspace{0.3em}
+\begin{center}
+\begin{tabular}{lrl}
+  \toprule
+  Grandezza & Valore & Unit\`a \\
+  \midrule
+  $P_\text{emit} = \int B\,\mathrm{d}f$ & dipende da $T$ & W/m$^2$/sr \\
+  $P_\text{abs}  = \int B\cdot A\,\mathrm{d}f$ & $< P_\text{emit}$ & W/m$^2$/sr \\
+  $\eta = P_\text{abs}/P_\text{emit}$ & vedi tabella & -- \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.4em}
+Variazione intorno a $T_\text{nom}$ con passo $\Delta T = \SI{10}{\electronvolt}$:
+
+\vspace{0.2em}
+\begin{center}
+\small
+\begin{tabular}{ccc}
+  \toprule
+  $T$~[eV] & $\eta = P_\text{abs}/P_\text{emit}$~[\%] & Nota \\
+  \midrule
+  55  & (minimo) & spettro spostato verso NIR \\
+  \textbg{85}  & \textbg{(nominale)} & \textbg{punto di lavoro} \\
+  115 & (massimo) & spettro spostato verso X \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.3em}
+\small
+Il rapporto $\eta$ \textbg{cresce con $T$}: a temperature pi\`u elevate
+lo spettro di Planck si sposta verso frequenze pi\`u alte, dove $A(f)$
+del platino \`e maggiore (legge di Wien: $f_\text{max} \propto T$).
+
+\end{frame}
+
+% --- Slide: efficienza assorbimento vs T ---
+\begin{frame}
+\frametitle{Efficienza di assorbimento vs temperatura}
 
 \begin{center}
-  \includegraphics[width=0.80\textwidth]{blocco3_uscita_banda.png}
+  \includegraphics[width=0.72\textwidth]{blocco3_assorbimento.png}
 \end{center}
 
 \vspace{-0.3em}
 \small
-\textit{Sinistra}: segnale ideale per banda.
-\textit{Destra}: segnale reale con saturazione e rumore.
-Il segnale cade sotto il rumore alle basse frequenze (NIR)
-e satura ai raggi~X ad alta intensit\`a.
+Il punto rosso indica $T_\text{nom} = \SI{85}{\eV}$.
+La curva \`e monotona crescente: a temperature pi\`u alte il picco
+dello spettro di Planck si sposta verso l'EUV/raggi~X dove il platino
+assorbe di pi\`u. Il bolometro \`e quindi \textbg{pi\`u sensibile}
+(a parit\`a di geometria) quando misura plasmi pi\`u caldi.
 
 \end{frame}
 
@@ -178,15 +215,16 @@ e satura ai raggi~X ad alta intensit\`a.
     \begin{itemize}
       \item Spettro di Planck a $T = \SI{85}{\electronvolt}$
       \item Assorbanza Pt da NIR a raggi~X
-      \item $P_\text{abs} = \int B\,A\,\mathrm{d}f$
-            (regola trapezi, 500 punti)
-      \item Spettro passato al modello diretto banda per banda
+      \item $\eta = P_\text{abs}/P_\text{emit}$ cresce con $T$
+      \item Il bolometro in Pt \`e pi\`u efficiente\\
+            per plasmi pi\`u caldi
     \end{itemize}
 
     \vspace{0.4em}
     \begin{block}{Risultato chiave}
-      La banda utile del bolometro copre le frequenze UV--EUV,
-      dove il plasma da fusione emette pi\`u intensamente.
+      La legge di Wien sposta il picco verso le X
+      al crescere di $T$: il platino assorbe meglio
+      l\`i, quindi $\eta(T)$ \`e crescente.
     \end{block}
   \end{column}
 \end{columns}

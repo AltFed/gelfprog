@@ -3,6 +3,7 @@
 %  Eseguire da dentro la cartella blocco_1_2_3/
 %
 %  Blocco 3: B(f,T) * A(f) integrato su df -> P_abs
+%            Rapporto P_abs / P_emit al variare di T
 % ==========================================================================
 
 clear; clc;
@@ -13,29 +14,32 @@ fprintf('========================================\n\n');
 
 p = bolometer_params();
 
-T_source = 85 * 11604;   % 85 eV in Kelvin
+T_nom_eV = 85;
+T_source  = T_nom_eV * 11604;   % 85 eV in Kelvin
 pd = power_density(T_source, p);
 
-fprintf('Temperatura sorgente : %.2e K  (%.0f eV)\n', T_source, T_source/11604);
-fprintf('Potenza assorbita    : %.4e W/m^2/sr\n\n',   pd.P_abs);
+P_emit_nom = trapz(pd.f, pd.B);
+ratio_nom  = pd.P_abs / P_emit_nom;
 
-% --- figura ---
+fprintf('Temperatura sorgente : %.2e K  (%.0f eV)\n', T_source, T_nom_eV);
+fprintf('Potenza emessa       : %.4e W/m^2/sr\n',     P_emit_nom);
+fprintf('Potenza assorbita    : %.4e W/m^2/sr\n',     pd.P_abs);
+fprintf('Frazione assorbita   : %.2f %%\n\n',         ratio_nom * 100);
+
+% --- figura 1: radianza, assorbanza, integrando ---
 figure('Name','Blocco 3 - Densita di potenza', ...
        'Position',[100 100 1200 420], 'Color','w');
 
 f_lim = [3e14, 3e18];
 
-
-% pannello 1: radianza di Planck
 ax1 = subplot(1,3,1);
 loglog(pd.f, pd.B, 'b-', 'LineWidth', 2);
 xlim(f_lim);
 xlabel('Frequenza [Hz]'); ylabel('B(f,T)  [W/m^2/sr/Hz]');
-title(sprintf('Planck  T = %.0f eV', T_source/11604), 'Color','k');
+title(sprintf('Planck  T = %.0f eV', T_nom_eV), 'Color','k');
 grid on; box on;
 set(ax1, 'Color','w', 'XColor','k', 'YColor','k', 'GridColor',[0.8 0.8 0.8]);
 
-% pannello 2: assorbanza platino
 ax2 = subplot(1,3,2);
 semilogx(pd.f, pd.A, 'r-', 'LineWidth', 2);
 xlim(f_lim); ylim([0 1]);
@@ -44,7 +48,6 @@ title('Assorbanza Platino', 'Color','k');
 grid on; box on;
 set(ax2, 'Color','w', 'XColor','k', 'YColor','k', 'GridColor',[0.8 0.8 0.8]);
 
-% pannello 3: integrando B*A
 ax3 = subplot(1,3,3);
 loglog(pd.f, pd.integrand, 'Color',[0 0.6 0.8], 'LineWidth', 2);
 xlim(f_lim);
@@ -55,49 +58,56 @@ set(ax3, 'Color','w', 'XColor','k', 'YColor','k', 'GridColor',[0.8 0.8 0.8]);
 
 exportgraphics(gcf, 'blocco3_risultati.png', 'Resolution', 150);
 
-% --- figura 2: uscita bolometro per banda di frequenza ---
-rng(42);
-fwd_f = forward_model(pd.integrand, p);
-nr_f  = add_noise_to_signal(fwd_f.DeltaV, p);
+% --- loop su variazioni di temperatura ---
+dT_eV = [-30, -20, -10, 0, +10, +20, +30];
+T_vec = (T_nom_eV + dT_eV) * 11604;
 
-sat_m = fwd_f.is_saturated;
-ok_m  = ~sat_m & nr_f.SNR >= 1;
-ns_m  = ~sat_m & nr_f.SNR <  1;
+P_abs_vec  = zeros(size(T_vec));
+P_emit_vec = zeros(size(T_vec));
 
-ax_style = {'Color','w','XColor','k','YColor','k','GridColor',[0.8 0.8 0.8]};
+for i = 1:length(T_vec)
+    pd_i = power_density(T_vec(i), p);
+    P_abs_vec(i)  = pd_i.P_abs;
+    P_emit_vec(i) = trapz(pd_i.f, pd_i.B);
+end
 
-figure('Name','Blocco 3 - Uscita per banda', ...
-       'Position',[100 100 1100 500], 'Color','w');
+ratio_vec = P_abs_vec ./ P_emit_vec;
 
-% pannello sx: segnale ideale per frequenza
-ax4 = subplot(1,2,1);
+fprintf('%-10s %-8s %-18s %-18s %-10s\n', ...
+    'dT [eV]', 'T [eV]', 'P_emit [W/m2/sr]', 'P_abs [W/m2/sr]', 'Ratio [%]');
+fprintf('%s\n', repmat('-', 1, 68));
+for i = 1:length(dT_eV)
+    fprintf('%-10d %-8d %-18.4e %-18.4e %-10.2f\n', ...
+        dT_eV(i), T_nom_eV + dT_eV(i), P_emit_vec(i), P_abs_vec(i), ratio_vec(i)*100);
+end
+
+% --- figura 2: frazione assorbita vs temperatura ---
+figure('Name','Blocco 3 - Assorbimento vs T', ...
+       'Position',[100 100 700 480], 'Color','w');
+
 hold on; grid on; box on;
-loglog(pd.f(ns_m), abs(fwd_f.DeltaV_ideal(ns_m)), 'r.', 'MarkerSize', 4, 'DisplayName', 'Rumore dom.');
-loglog(pd.f(ok_m), abs(fwd_f.DeltaV_ideal(ok_m)), 'g.', 'MarkerSize', 4, 'DisplayName', 'Ricostruibile');
-loglog(pd.f(sat_m),abs(fwd_f.DeltaV_ideal(sat_m)),'o', 'MarkerSize', 4, ...
-    'Color',[0.9 0.5 0], 'MarkerFaceColor',[0.9 0.5 0], 'DisplayName', 'Saturato');
-yline(p.V_noise, 'r:', 'LineWidth', 1.5, 'Label', 'V_{noise}', 'HandleVisibility','off');
-yline(p.V_sat,   'm-.','LineWidth', 1.5, 'Label', 'V_{sat}',   'HandleVisibility','off');
-set(ax4, 'XScale','log', 'YScale','log', ax_style{:});
-xlabel('Frequenza [Hz]'); ylabel('|\DeltaV| [V]');
-title('Segnale ideale per banda', 'Color','k');
-legend('Location','northwest', 'FontSize',9, 'TextColor','k', 'Color','w', 'EdgeColor','k');
+plot(dT_eV, ratio_vec * 100, 'b-o', 'LineWidth', 2, 'MarkerSize', 7, ...
+     'MarkerFaceColor','b');
+plot(0, ratio_nom * 100, 'ro', 'LineWidth', 2, 'MarkerSize', 10, ...
+     'MarkerFaceColor','r', 'DisplayName', sprintf('T_{nom} = %d eV', T_nom_eV));
+xline(0, 'k--', 'LineWidth', 1, 'HandleVisibility','off');
 
-% pannello dx: segnale reale per frequenza
-ax5 = subplot(1,2,2);
-hold on; grid on; box on;
-loglog(pd.f(ns_m), abs(nr_f.DeltaV_noisy(ns_m)), 'r.', 'MarkerSize', 4, 'DisplayName', 'Rumore dom.');
-loglog(pd.f(ok_m), abs(nr_f.DeltaV_noisy(ok_m)), 'g.', 'MarkerSize', 4, 'DisplayName', 'Ricostruibile');
-loglog(pd.f(sat_m),abs(nr_f.DeltaV_noisy(sat_m)),'o', 'MarkerSize', 4, ...
-    'Color',[0.9 0.5 0], 'MarkerFaceColor',[0.9 0.5 0], 'DisplayName', 'Saturato');
-yline(p.V_noise, 'r:', 'LineWidth', 1.5, 'Label', 'V_{noise}', 'HandleVisibility','off');
-yline(p.V_sat,   'm-.','LineWidth', 1.5, 'Label', 'V_{sat}',   'HandleVisibility','off');
-set(ax5, 'XScale','log', 'YScale','log', ax_style{:});
-xlabel('Frequenza [Hz]'); ylabel('|\DeltaV| [V]');
-title('Segnale reale (saturazione + rumore) per banda', 'Color','k');
-legend('Location','northwest', 'FontSize',9, 'TextColor','k', 'Color','w', 'EdgeColor','k');
+xlabel('\DeltaT [eV]', 'FontSize', 12);
+ylabel('P_{abs} / P_{emit}  [%]', 'FontSize', 12);
+title(sprintf('Frazione di potenza assorbita  (T_{nom} = %d eV)', T_nom_eV), ...
+      'Color','k', 'FontSize', 12);
 
-exportgraphics(gcf, 'blocco3_uscita_banda.png', 'Resolution', 150);
+ax = gca;
+set(ax, 'Color','w', 'XColor','k', 'YColor','k', 'GridColor',[0.8 0.8 0.8], ...
+    'FontSize', 11);
 
-fprintf('Figure salvate: blocco3_risultati.png, blocco3_uscita_banda.png\n');
+xticks(dT_eV);
+xticklabels(arrayfun(@(x) sprintf('%+d', x), dT_eV, 'UniformOutput', false));
+
+legend(sprintf('T_{nom} = %d eV  (%.2f%%)', T_nom_eV, ratio_nom*100), ...
+    'Location','northwest', 'FontSize', 10, 'TextColor','k', 'Color','w', 'EdgeColor','k');
+
+exportgraphics(gcf, 'blocco3_assorbimento.png', 'Resolution', 150);
+
+fprintf('\nFigure salvate: blocco3_risultati.png, blocco3_assorbimento.png\n');
 fprintf('========================================\n');
