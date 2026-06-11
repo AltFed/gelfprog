@@ -174,6 +174,40 @@ $\tau \in [0,1]$:
 
 \end{frame}
 
+% --- Slide: scelta del range di temperatura ---
+\begin{frame}
+\frametitle{Scelta del range di temperatura}
+
+In un tokamak la temperatura del plasma non \`e uniforme.
+Le diverse zone operative determinano il range di $T$ da esplorare:
+
+\vspace{0.4em}
+\begin{center}
+\begin{tabular}{llll}
+  \toprule
+  Zona & $T$ tipica & Note & Colore grafico \\
+  \midrule
+  Divertore         & 1--40~eV   & plasma freddo, bordo estremo & \textcolor{blue}{blu chiaro} \\
+  SOL               & 40--200~eV & zona di misura del bolometro & \textcolor{orange}{arancio} \\
+  \textbg{Pedestal} & \textbg{200--1000~eV} & \textbg{bordo H-mode} & \textcolor{red}{rosso chiaro} \\
+  Core              & 10--20~keV & non rilevante (Pt satura) & --- \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.3em}
+Il bolometro \`e posizionato tipicamente nella \textbg{zona SOL/bordo},
+quindi $T_\text{nom} = \SI{85}{\electronvolt}$ \`e un valore rappresentativo.
+
+\vspace{0.2em}
+\textbf{Range scelto:} $T \in [10, 300]$~eV con 10 punti,
+addensati intorno a $T_\text{nom}$:
+\[
+  T = [10,\; 30,\; 55,\; 70,\; \mathbf{85},\; 100,\; 115,\; 150,\; 200,\; 300]\;\text{eV}
+\]
+
+\end{frame}
+
 % --- Slide: efficienza effettiva vs T ---
 \begin{frame}
 \frametitle{Efficienza effettiva $\eta_\text{eff}(T)$}
@@ -184,11 +218,11 @@ $\tau \in [0,1]$:
 
 \vspace{-0.3em}
 \small
-Il punto rosso indica $T_\text{nom} = \SI{85}{\eV}$.
-$\eta_\text{eff} = \tau \cdot P_\text{abs}/P_\text{emit}$ con $\tau = 0.8$.
-La curva cresce con $T$: la legge di Wien sposta il picco verso l'EUV/X
-dove $A(f)\to 1$. La trasmittanza $\tau$ abbassa uniformemente la curva
-rispetto al caso senza plasma.
+Il punto rosso \`e $T_\text{nom} = \SI{85}{\eV}$ (SOL).
+Le fasce colorate separano divertore, SOL e pedestal.
+La curva \`e monotona crescente: la legge di Wien sposta il picco
+verso EUV/X al crescere di $T$, dove $A(f)\to 1$.
+La trasmittanza $\tau=0.8$ abbassa $\eta_\text{eff}$ del 20\% uniformemente.
 
 \end{frame}
 
