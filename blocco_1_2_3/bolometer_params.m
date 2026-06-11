@@ -16,5 +16,7 @@ function params = bolometer_params()
 
     params.V_noise = 1e-5;     % rumore rms generico                   [V]
 
+    params.tau_plasma = 0.8;   % trasmittanza del plasma (0-1)         [-]
+
     params.tau = params.C / params.G;
 end

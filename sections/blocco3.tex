@@ -33,9 +33,11 @@ emessa dal plasma in un tokamak.
       \item Pesare con l'assorbanza del sensore $A(f)$
       \item Integrare su tutte le frequenze:\\
             $P_\text{abs} = \int B\,A\,\mathrm{d}f$
+      \item Applicare trasmittanza plasma $\tau$:\\
+            $P_\text{eff} = \tau \cdot P_\text{abs}$
       \item Calcolare il rapporto\\
-            $\eta = P_\text{abs} / P_\text{emit}$
-      \item Studiare $\eta(T)$ al variare di $T$
+            $\eta_\text{eff} = P_\text{eff} / P_\text{emit}$
+      \item Studiare $\eta_\text{eff}(T)$ al variare di $T$
     \end{enumerate}
   \end{column}
 \end{columns}
@@ -128,65 +130,65 @@ $P_\text{abs} = \int B\,A\,\mathrm{d}f$.
 
 \end{frame}
 
-% --- Slide: potenza assorbita risultato numerico ---
+% --- Slide: trasmittanza plasma e potenza effettiva ---
 \begin{frame}
-\frametitle{Potenza assorbita --- risultato numerico}
+\frametitle{Trasmittanza del plasma}
 
-A $T_\text{nom} = \SI{85}{\electronvolt}$, l'integrazione numerica d\`a:
+La radiazione emessa dalla sorgente deve attraversare il plasma prima di
+raggiungere il bolometro. Gli elettroni attenuano il fascio di un fattore
+$\tau \in [0,1]$:
 
-\vspace{0.3em}
-\begin{center}
-\begin{tabular}{lrl}
-  \toprule
-  Grandezza & Valore & Unit\`a \\
-  \midrule
-  $P_\text{emit} = \int B\,\mathrm{d}f$ & dipende da $T$ & W/m$^2$/sr \\
-  $P_\text{abs}  = \int B\cdot A\,\mathrm{d}f$ & $< P_\text{emit}$ & W/m$^2$/sr \\
-  $\eta = P_\text{abs}/P_\text{emit}$ & vedi tabella & -- \\
-  \bottomrule
-\end{tabular}
-\end{center}
-
-\vspace{0.4em}
-Variazione intorno a $T_\text{nom}$ con passo $\Delta T = \SI{10}{\electronvolt}$:
-
-\vspace{0.2em}
-\begin{center}
-\small
-\begin{tabular}{ccc}
-  \toprule
-  $T$~[eV] & $\eta = P_\text{abs}/P_\text{emit}$~[\%] & Nota \\
-  \midrule
-  55  & (minimo) & spettro spostato verso NIR \\
-  \textbg{85}  & \textbg{(nominale)} & \textbg{punto di lavoro} \\
-  115 & (massimo) & spettro spostato verso X \\
-  \bottomrule
-\end{tabular}
-\end{center}
+\[
+  P_\text{eff} = \tau \cdot P_\text{abs}
+               = \tau \cdot \int B(f,T)\,A(f)\,\mathrm{d}f
+\]
 
 \vspace{0.3em}
-\small
-Il rapporto $\eta$ \textbg{cresce con $T$}: a temperature pi\`u elevate
-lo spettro di Planck si sposta verso frequenze pi\`u alte, dove $A(f)$
-del platino \`e maggiore (legge di Wien: $f_\text{max} \propto T$).
+\begin{columns}[T]
+  \begin{column}{0.50\textwidth}
+    \textbf{Catena completa:}
+    \[
+      P_\text{emit}
+      \xrightarrow{\times A(f)} P_\text{abs}
+      \xrightarrow{\times\,\tau} P_\text{eff}
+      \xrightarrow{\text{Blocco 1}} \Delta V
+    \]
+    \vspace{0.3em}
+    \textbf{Efficienza effettiva:}
+    \[
+      \eta_\text{eff} = \frac{P_\text{eff}}{P_\text{emit}}
+                      = \tau \cdot \frac{P_\text{abs}}{P_\text{emit}}
+    \]
+  \end{column}
+  \begin{column}{0.47\textwidth}
+    \begin{block}{Valore scelto: $\tau = 0.8$}
+      Plausibile per bordo tokamak\\
+      ($n_e \sim 10^{18}$--$10^{19}$~m$^{-3}$).\\
+      Il plasma \`e quasi trasparente\\
+      in banda UV/EUV/X; il 20\%\\
+      viene assorbito lungo il\\
+      percorso sorgente--sensore.
+    \end{block}
+  \end{column}
+\end{columns}
 
 \end{frame}
 
-% --- Slide: efficienza assorbimento vs T ---
+% --- Slide: efficienza effettiva vs T ---
 \begin{frame}
-\frametitle{Efficienza di assorbimento vs temperatura}
+\frametitle{Efficienza effettiva $\eta_\text{eff}(T)$}
 
 \begin{center}
-  \includegraphics[width=0.72\textwidth]{blocco3_assorbimento.png}
+  \includegraphics[width=0.68\textwidth]{blocco3_assorbimento.png}
 \end{center}
 
 \vspace{-0.3em}
 \small
 Il punto rosso indica $T_\text{nom} = \SI{85}{\eV}$.
-La curva \`e monotona crescente: a temperature pi\`u alte il picco
-dello spettro di Planck si sposta verso l'EUV/raggi~X dove il platino
-assorbe di pi\`u. Il bolometro \`e quindi \textbg{pi\`u sensibile}
-(a parit\`a di geometria) quando misura plasmi pi\`u caldi.
+$\eta_\text{eff} = \tau \cdot P_\text{abs}/P_\text{emit}$ con $\tau = 0.8$.
+La curva cresce con $T$: la legge di Wien sposta il picco verso l'EUV/X
+dove $A(f)\to 1$. La trasmittanza $\tau$ abbassa uniformemente la curva
+rispetto al caso senza plasma.
 
 \end{frame}
 
@@ -215,16 +217,18 @@ assorbe di pi\`u. Il bolometro \`e quindi \textbg{pi\`u sensibile}
     \begin{itemize}
       \item Spettro di Planck a $T = \SI{85}{\electronvolt}$
       \item Assorbanza Pt da NIR a raggi~X
-      \item $\eta = P_\text{abs}/P_\text{emit}$ cresce con $T$
+      \item Trasmittanza plasma $\tau = 0.8$
+      \item $\eta_\text{eff} = \tau \cdot P_\text{abs}/P_\text{emit}$ cresce con $T$
       \item Il bolometro in Pt \`e pi\`u efficiente\\
             per plasmi pi\`u caldi
     \end{itemize}
 
     \vspace{0.4em}
     \begin{block}{Risultato chiave}
-      La legge di Wien sposta il picco verso le X
-      al crescere di $T$: il platino assorbe meglio
-      l\`i, quindi $\eta(T)$ \`e crescente.
+      Wien sposta il picco verso X con $T$;
+      il platino assorbe meglio l\`i.
+      La trasmittanza $\tau=0.8$ riduce
+      $\eta_\text{eff}$ del 20\% uniformemente.
     \end{block}
   \end{column}
 \end{columns}
