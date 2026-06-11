@@ -121,8 +121,8 @@ ax = gca;
 set(ax, 'Color','w', 'XColor','k', 'YColor','k', 'GridColor',[0.8 0.8 0.8], ...
     'FontSize', 11);
 
-xticks(dT_eV);
-xticklabels(arrayfun(@(x) sprintf('%+d', x), dT_eV, 'UniformOutput', false));
+xticks(T_eV);
+xticklabels(arrayfun(@(x) sprintf('%d', x), T_eV, 'UniformOutput', false));
 
 legend('Location','northwest', 'FontSize', 10, 'TextColor','k', 'Color','w', 'EdgeColor','k');
 
